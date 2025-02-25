@@ -26,7 +26,8 @@ int main(void)
         /* get X11 display */
         Display *display;
         if ((display = XOpenDisplay(NULL)) == NULL ) {
-                fprintf(stderr, "Cannot open display!\n");
+                fprintf(stderr, "Cannot open display\n");
+                exit(1);
         }
         Window root = DefaultRootWindow(display);
 
@@ -45,7 +46,7 @@ int main(void)
                 exit(1);
         }
 
-        char path[512];
+        char path[512];  // large size avoids compiler warning
         int nel = 0;
         int buffer = 10;
 
@@ -106,19 +107,29 @@ int main(void)
                 perror("malloc fifo_msgs");
                 exit(1);
         }
-        for (int i = 0; i < nel; i++) {
+        for (int i = 0; i < nel; ++i) {
                 fifo_msgs[i] = calloc(MSG_SIZE, sizeof(char)); // initialized
                 if (!fifo_msgs[i]) {
                         perror("calloc fifo_msgs[i]");
                         exit(1);
                 }
         }
+        /* back up of fifo_msgs, to prevent partial final string
+         * when one fifo updates before the other */
+        char **bak_msgs = malloc(nel * sizeof(char *));
+        if (!bak_msgs) { 
+                perror("malloc bak_msgs"); 
+                exit(1); 
+        }
+        for (int i = 0; i < nel; ++i) {
+                bak_msgs[i] = calloc(MSG_SIZE, sizeof(char));
+                if (!bak_msgs[i]) { 
+                        perror("calloc bak_msgs[i]"); 
+                        exit(1); 
+                }
+        }
 
        while (!stop_flag) { 
-                /* reset buffers */
-                for (int i = 0; i < nel; ++i)
-                        fifo_msgs[i][0] = '\0';
-
                 /* reset RFRSH timer */
                 time_t start = time(NULL);
                 while(difftime(time(NULL), start) < RFRSH) {
@@ -147,14 +158,8 @@ int main(void)
                                 continue;
 
                         for (int i = 0; i < nel; ++i) {
-                                if (!FD_ISSET(fd[i], &readfds)) // no data for fd[i]
+                                if (!FD_ISSET(fd[i], &readfds)) // filter fds
                                         continue;
-                                if (fifo_msgs[i][0] != '\0') { // drain stale fd
-                                        char tmp[MSG_SIZE];
-                                        while (read(fd[i], tmp, sizeof(tmp) - 1) > 0)
-                                                ;
-                                        continue;
-                                }
 
                                 char buf[MSG_SIZE];
                                 ssize_t bytes_read = read(fd[i], buf, sizeof(buf) - 1);
@@ -172,7 +177,11 @@ int main(void)
                                 }
                                 buf[j] = '\0';
 
-                                /* save in msgs array */
+                                /* back up old data before overwrite */
+                                if (fifo_msgs[i][0]) {
+                                        strncpy(bak_msgs[i], fifo_msgs[i], MSG_SIZE - 1);
+                                        bak_msgs[i][MSG_SIZE-1] = '\0';
+                                }
                                 strncpy(fifo_msgs[i], buf, MSG_SIZE - 1);
                                 fifo_msgs[i][MSG_SIZE-1] = '\0';
 
@@ -184,34 +193,31 @@ int main(void)
 
                 /* concatenate array into final string */
                 out_str[0] = '\0'; 
-                int cur_len = 0;
+                int cur_len = 0, count = 0;
                 for (int i = 0; i < nel; ++i) {
-                        if (fifo_msgs[i][0] == '\0')
+                        /* use back up if fifo empty */
+                        char *msg = fifo_msgs[i][0] ? fifo_msgs[i] : bak_msgs[i];
+                        if (!msg[0])
                                 continue;
 
+                        /* add a separator if not first element */
                         int sep_len = strlen(SEP);
-                        int msg_len;
-                        if (i == 0) // no separators before first element
-                                msg_len = strlen(fifo_msgs[i]);
-                        else
-                                msg_len = strlen(fifo_msgs[i]) + sep_len;
-                        if (cur_len + msg_len >= MAX_READ) {
-                                fprintf(stderr, "Final string too long\n");
-                                fprintf(stderr, "Breaking early...\n");
+                        int msg_len = strlen(msg) + (count ? sep_len : 0);
+                        if (cur_len + msg_len >= MAX_READ)
                                 break;
-                        }
 
-                        if (i == 0)
-                                strncat(out_str, fifo_msgs[i], MAX_READ - cur_len);
-                        else {
-                                strncat(out_str, SEP, MAX_READ - cur_len + sep_len);
-                                strncat(out_str, fifo_msgs[i], MAX_READ - cur_len);
+                        if (count) {
+                                strncat(out_str, SEP, MAX_READ - cur_len);
+                                cur_len += sep_len;
                         }
-
+                        strncat(out_str, msg, MAX_READ - cur_len);
                         cur_len += msg_len;
+                        ++count;
                 }
 
                 /* update bar with finished string */
+                if (out_str[0] == '\0')
+                        continue;
                 XStoreName(display, root, out_str);
                 XSync(display, 0);
         }
