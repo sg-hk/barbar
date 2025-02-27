@@ -281,9 +281,8 @@ int main(void)
         /* clean up on signal exit */
         free(out_str);
         for (int i = 0; i < nel; i++) {
-                if(fifo_msgs[i]) free(fifo_msgs[i]);
-                if(bak_msgs[i]) free(bak_msgs[i]);
-                if(producers[i].msg) free(producers[i].msg);
+                free(fifo_msgs[i]);
+                free(bak_msgs[i]);
                 close(producers[i].fd);
         }
         free(fifo_msgs);
