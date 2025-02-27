@@ -14,11 +14,37 @@
 
 #include "config.h"
 
+typedef struct Fifo {
+        int fd;
+        char *name;
+        char *msg;
+} Fifo;
+
 volatile sig_atomic_t stop_flag = 0;
-void handle_signal(int signal) 
+void handle_signal(int signal)
 {
         (void)signal; // suppress compiler warning
         stop_flag = 1;
+}
+
+int get_order(const char *name)
+{
+        for (int i = 0; FIFO_ORDER[i]; ++i) {
+                if (!strcmp(name, FIFO_ORDER[i]))
+                        return i;
+        }
+
+        return 0; // not in set
+}
+
+int cmp_fifos(const void *a, const void *b) {
+    Fifo *fa = (Fifo *)a;
+    Fifo *fb = (Fifo *)b;
+    int oa = get_order(fa->name);
+    int ob = get_order(fb->name);
+    if (oa == ob && oa == 0)
+        return strcmp(fa->name, fb->name); /* both unknown, sort alphabetically */
+    return oa - ob;
 }
 
 int main(void)
@@ -50,7 +76,11 @@ int main(void)
         int nel = 0;
         int buffer = 10;
 
-        int *fd = malloc(buffer * sizeof(int)); 
+        Fifo *producers = malloc(buffer * sizeof(Fifo));
+        if (!producers) {
+                perror("malloc producers");
+                exit(1);
+        }
 
         /* open all fifos in DIRP */
         while ((entry = readdir(dir))) {
@@ -69,14 +99,17 @@ int main(void)
 
                 if (nel >= buffer) {
                         buffer *= 2;
-                        int *tmp_fd = realloc(fd, buffer * sizeof(int));
-                        if (!tmp_fd) {
+                        Fifo *tmp_prd = realloc(producers, buffer * sizeof(Fifo));
+                        if (!tmp_prd) {
                                 perror("realloc");
                                 exit(1);
                         }
-                        fd = tmp_fd;
+                        producers = tmp_prd;
                 }
-                fd[nel++] = new_fd;
+
+                producers[nel].fd = new_fd;
+                producers[nel].name = strdup(entry->d_name);
+                ++nel;
         }
         closedir(dir);
 
@@ -85,12 +118,16 @@ int main(void)
                 exit(1);
         }
 
+        /* sort producers for correct string output */
+        qsort(producers, nel, sizeof(Fifo), cmp_fifos);
+
         /* determine max file descriptor for select
          * NOT nel, just highest file descriptor number + 1 */
         int maxfd = 0;
         for (int i = 0; i < nel; ++i) {
-                if (fd[i] > maxfd)
-                        maxfd = fd[i];
+                if (producers[i].fd > maxfd)
+                        maxfd = producers[i].fd;
+
         }
         ++maxfd; // for select
 
@@ -114,29 +151,28 @@ int main(void)
                         exit(1);
                 }
         }
-        /* back up of fifo_msgs, to prevent partial final string
-         * when one fifo updates before the other */
+        /* back up of fifo_msgs, to ensure final string integrity */ 
         char **bak_msgs = malloc(nel * sizeof(char *));
-        if (!bak_msgs) { 
-                perror("malloc bak_msgs"); 
-                exit(1); 
+        if (!bak_msgs) {
+                perror("malloc bak_msgs");
+                exit(1);
         }
         for (int i = 0; i < nel; ++i) {
                 bak_msgs[i] = calloc(MSG_SIZE, sizeof(char));
-                if (!bak_msgs[i]) { 
-                        perror("calloc bak_msgs[i]"); 
-                        exit(1); 
+                if (!bak_msgs[i]) {
+                        perror("calloc bak_msgs[i]");
+                        exit(1);
                 }
         }
 
-       while (!stop_flag) { 
+        fd_set readfds;
+        while (!stop_flag) {
                 /* reset RFRSH timer */
                 time_t start = time(NULL);
                 while(difftime(time(NULL), start) < RFRSH) {
-                        fd_set readfds;
                         FD_ZERO(&readfds);
                         for (int i = 0; i < nel; ++i)
-                                FD_SET(fd[i], &readfds);
+                                FD_SET(producers[i].fd, &readfds);
 
                         /* wait at most 1s or half the refresh rate for data */
                         struct timeval timeout;
@@ -148,30 +184,37 @@ int main(void)
                                 timeout.tv_usec = RFRSH * (1000000 / 2);
                         }
 
-                        int ret = select(maxfd, &readfds, NULL, NULL, &timeout);
-                        if (ret == -1) {
+                        int nready = select(maxfd, &readfds, NULL, NULL, &timeout);
+
+                        if (nready == -1) {
                                 perror("select");
                                 break;
-                        }
-                        
-                        if (ret == 0) // no data for any fd
+                        } else if (nready == 0) // no data for any fd
                                 continue;
 
                         for (int i = 0; i < nel; ++i) {
-                                if (!FD_ISSET(fd[i], &readfds)) // filter fds
+                                if (!FD_ISSET(producers[i].fd, &readfds))
                                         continue;
 
                                 char buf[MSG_SIZE];
-                                ssize_t bytes_read = read(fd[i], buf, sizeof(buf) - 1);
-                                if (bytes_read <= 0) {
+                                ssize_t bread;
+                                bread = read(producers[i].fd, 
+                                             buf, sizeof(buf) - 1);
+
+                                if (bread == -1) {
                                         perror("read fifo");
+                                        continue;
+                                } else if (bread == 0) {
+                                        fprintf(stderr, 
+                                                "no data read for %s\n",
+                                                producers[i].name);
                                         continue;
                                 }
 
                                 /* format buf: remove \n add \0 */
-                                buf[bytes_read] = '\0';
+                                buf[bread] = '\0';
                                 int j = 0;
-                                for (int k = 0; k < bytes_read; ++k) {
+                                for (int k = 0; k < bread; ++k) {
                                         if (buf[k] != '\n')
                                                 buf[j++] = buf[k];
                                 }
@@ -179,40 +222,42 @@ int main(void)
 
                                 /* back up old data before overwrite */
                                 if (fifo_msgs[i][0]) {
-                                        strncpy(bak_msgs[i], fifo_msgs[i], MSG_SIZE - 1);
+                                        strncpy(bak_msgs[i], fifo_msgs[i],
+                                                MSG_SIZE - 1);
                                         bak_msgs[i][MSG_SIZE-1] = '\0';
                                 }
                                 strncpy(fifo_msgs[i], buf, MSG_SIZE - 1);
                                 fifo_msgs[i][MSG_SIZE-1] = '\0';
 
                                 /* drain leftovers */
-                                while (read(fd[i], buf, sizeof(buf) - 1) > 0)
+                                while (read(producers[i].fd, buf, sizeof(buf) - 1) > 0)
                                         ;
                         }
                 }
 
-                /* concatenate array into final string */
-                out_str[0] = '\0'; 
-                int cur_len = 0, count = 0;
+                /* concatenate array into status string */
+
+                out_str[0] = '\0';
+                int cur_len = 0;
                 for (int i = 0; i < nel; ++i) {
                         /* use back up if fifo empty */
                         char *msg = fifo_msgs[i][0] ? fifo_msgs[i] : bak_msgs[i];
                         if (!msg[0])
                                 continue;
 
-                        /* add a separator if not first element */
                         int sep_len = strlen(SEP);
-                        int msg_len = strlen(msg) + (count ? sep_len : 0);
+
+                        /* add sep if not first element (ie cur_len != 0) */
+                        int msg_len = strlen(msg) + (cur_len ? sep_len : 0);
                         if (cur_len + msg_len >= MAX_READ)
                                 break;
 
-                        if (count) {
+                        if (cur_len) {
                                 strncat(out_str, SEP, MAX_READ - cur_len);
                                 cur_len += sep_len;
                         }
                         strncat(out_str, msg, MAX_READ - cur_len);
                         cur_len += msg_len;
-                        ++count;
                 }
 
                 /* update bar with finished string */
@@ -226,10 +271,13 @@ int main(void)
         free(out_str);
         for (int i = 0; i < nel; i++) {
                 free(fifo_msgs[i]);
-                close(fd[i]);
+                free(bak_msgs[i]);
+                free(producers[i].msg);
+                close(producers[i].fd);
         }
         free(fifo_msgs);
-        free(fd);
+        free(bak_msgs);
+        free(producers);
         XCloseDisplay(display);
         return 0;
 }

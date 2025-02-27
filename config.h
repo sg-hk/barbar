@@ -1,19 +1,23 @@
-#ifndef CONFIG_H
-#define CONFIG_H
-
 /* Directory containing the FIFOs */
-#define DIRP "/tmp/bar"
+static const char *DIRP = "/tmp/bar";
+
+/* Order of status bar information 
+ * Last element is at right most of bar */
+static const char *FIFO_ORDER[] = { 
+        "fifo_ctimer", 
+        "fifo_date", 
+        "fifo_horologion",
+        NULL
+};
 
 /* Maximum total length of the string passed to xsetroot */
-#define MAX_READ 256 
+static const int MAX_READ = 256;
 
 /* Maximum length of an individual string from a FIFO */
-#define MSG_SIZE 64
+static const int MSG_SIZE = 64;
 
 /* Separator between messages */
-#define SEP " | "
+static const char *SEP = " | ";
 
-/* Refresh rate in seconds. Fractions are fine */
-#define RFRSH 2
-
-#endif /* CONFIG_H */
+/* Refresh rate in seconds */
+static const float RFRSH = 0.5;
