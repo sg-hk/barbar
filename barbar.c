@@ -27,6 +27,7 @@ void handle_signal(int signal)
         stop_flag = 1;
 }
 
+/* returns index in FIFO_ORDER or -1 */
 int get_order(const char *name)
 {
         for (int i = 0; FIFO_ORDER[i]; ++i) {
@@ -34,17 +35,27 @@ int get_order(const char *name)
                         return i;
         }
 
-        return 0; // not in set
+        return -1; // not in set
 }
 
+/* sorting function for qsort, final order:
+ * unknown, ..., fifo[0], fifo[1], ... */
 int cmp_fifos(const void *a, const void *b) {
-    Fifo *fa = (Fifo *)a;
-    Fifo *fb = (Fifo *)b;
-    int oa = get_order(fa->name);
-    int ob = get_order(fb->name);
-    if (oa == ob && oa == 0)
-        return strcmp(fa->name, fb->name); /* both unknown, sort alphabetically */
-    return oa - ob;
+        Fifo *fa = (Fifo *)a;
+        Fifo *fb = (Fifo *)b;
+        int oa = get_order(fa->name);
+        int ob = get_order(fb->name);
+
+        if (oa == -1 && ob == -1) {
+                /* both unknown, sort alphabetically */
+                return strcmp(fa->name, fb->name); 
+        }
+        if (oa == -1) 
+                return -1;  /* unknowns go first */
+        if (ob == -1) 
+                return 1;   /* unknowns go first */
+
+        return oa - ob;
 }
 
 int main(void)
@@ -270,9 +281,9 @@ int main(void)
         /* clean up on signal exit */
         free(out_str);
         for (int i = 0; i < nel; i++) {
-                free(fifo_msgs[i]);
-                free(bak_msgs[i]);
-                free(producers[i].msg);
+                if(fifo_msgs[i]) free(fifo_msgs[i]);
+                if(bak_msgs[i]) free(bak_msgs[i]);
+                if(producers[i].msg) free(producers[i].msg);
                 close(producers[i].fd);
         }
         free(fifo_msgs);
