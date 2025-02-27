@@ -17,7 +17,6 @@
 typedef struct Fifo {
         int fd;
         char *name;
-        char *msg;
 } Fifo;
 
 volatile sig_atomic_t stop_flag = 0;
