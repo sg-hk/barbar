@@ -1,8 +1,6 @@
 # Barbar
 
-Barbar is a small X11 status updater that reads and concatenates messages from named pipes, then updates the root window title. By default, it reads from FIFOs in `/tmp/bar`, concatenates messages with `" | "` as a separator, and polls for event every half second. These settings can be changed in `config.h`.
-
-Using FIFOs leads to a flexible interface where everything is simply an event-driven string read with minimal overhead.
+Barbar is a small X11 status updater that reads and concatenates messages from shared memory, then updates the root window title. By default, it concatenates messages with `" | "` as a separator, and polls for event every half second. These settings can be changed in `config.h`.
 
 ## Make commands
 

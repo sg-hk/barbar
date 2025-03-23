@@ -1,0 +1,9 @@
+clang
+%c -std=c2x
+%c -Wall
+%c -Wextra
+
+%c -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+%c -I/usr/local/include
+%c -I/opt/homebrew/include
+%c -I/opt/local/include
