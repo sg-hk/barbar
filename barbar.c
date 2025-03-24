@@ -11,12 +11,15 @@
 #include <sys/stat.h>
 #include <syslog.h>
 #include <time.h>
+#include <stdbool.h>
 #include <unistd.h>
 
 #include "config.h"
 
 void handle_signal(int);
 void log_err(const char*, ...);
+
+static bool terminate;
 
 int 
 main(void)
@@ -85,13 +88,16 @@ main(void)
         sem_post(sem);
 
         /* main loop: read shared memory, concat messages, update bar */
-        for (;;) {
+        while (!terminate) {
                 sem_wait(sem);
                 out_str[0] = '\0';
                 int cur_len = 0;
                 int sep_len = strlen(SEP);
-                for (int i = 0; i < NUM_MODULES; i++) {
-                        /* calculate the pointer to slot i */
+                for (int i = 0; i < NUM_MODULES; ++i) {
+                        /* 
+                         * calculate the pointer to slot i 
+                         * assume each i-th slot is null-terminated
+                         */
                         char *slot = shm_ptr + (i * MSG_SIZE);
                         if (slot[0] == '\0')
                                 continue;
@@ -113,6 +119,8 @@ main(void)
         }
 
         /* clean up */
+        XStoreName(display, root, "barbar was terminated");
+        XSync(display, False);
         free(out_str);
         if (munmap(shm_ptr, shm_size) == -1)
                 log_err("munmap");
@@ -133,14 +141,7 @@ void
 handle_signal(int sig)
 {
         (void)sig;  // suppress unused warning
-
-        Display *display = XOpenDisplay(NULL);
-        if (display == NULL)
-                log_err("could not reset status bar upon signal termination");
-        Window root = DefaultRootWindow(display);
-        XStoreName(display, root, "barbar was terminated");
-        XSync(display, False);
-        log_err("signal termination");
+        terminate = true;
 }
 
 /* writes error to syslog and exits */
