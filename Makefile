@@ -1,24 +1,37 @@
-CC = cc
-CFLAGS = -Wall -Wextra
+CC      = cc
+CFLAGS  = -Wall -Wextra
 LDFLAGS = -lX11
 
-TARGET = barbar
-SRC = barbar.c
-CONFIG = config.h
-PREFIX = /usr/local
-BINDIR = $(PREFIX)/bin
+PREFIX  = /usr/local
+BINDIR  = $(PREFIX)/bin
 
-all: $(TARGET)
+TARGET  = barbar
+TARGET_SRC = barbar.c
 
-$(TARGET): $(SRC) $(CONFIG)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC) $(LDFLAGS)
+UTIL    = util.c util.h
+CONFIG  = config.h
 
-install: $(TARGET)
+# Detect all .c files in modules/
+MODULE_DIR = modules
+MODULE_SRCS = $(wildcard $(MODULE_DIR)/*.c)
+MODULES = $(basename $(notdir $(MODULE_SRCS)))
+
+BINARIES = $(TARGET) $(MODULES)
+
+all: $(BINARIES)
+
+$(TARGET): $(TARGET_SRC) $(CONFIG)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+$(MODULES): %: $(MODULE_DIR)/%.c $(UTIL) $(CONFIG)
+	$(CC) $(CFLAGS) -DMODULE_NAME=\"${@}\" -o $@ $< util.c
+
+install: all
 	mkdir -p $(BINDIR)
-	cp $(TARGET) $(BINDIR)/
+	cp $(BINARIES) $(BINDIR)/
 
 uninstall:
-	rm -f $(BINDIR)/$(TARGET)
+	rm -f $(addprefix $(BINDIR)/, $(BINARIES))
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(BINARIES)

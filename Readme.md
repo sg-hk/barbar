@@ -1,25 +1,25 @@
 # Barbar
 
-Barbar is a small X11 status updater that reads and concatenates messages from shared memory, then updates the root window title. By default, it concatenates messages with `" | "` as a separator, and polls for event every half second. These settings can be changed in `config.h`.
+Barbar is a minimal X11 status updater. It reads fixed-size strings from shared memory, joins them with a separator, and sets the result as the root window name. By default, it uses `" | "` as the separator and updates every 0.5 seconds. These settings are defined in `config.h`.
 
-## shm vs named pipes
+## Modules
 
-Named pipes copy the string from the producer process to kernel space, and again from kernel space to the consumer. Shared memory is cleaner. The commit history shows a FIFO implementation.
+Modules are in the `modules/` directory. Each is a standalone program that writes to a specific slot in shared memory, based on its name (defined via `#define MODULE_NAME`) and its position in the `MODULE_NAMES` array in `config.h`.
 
-## Make commands
+Each module uses a shared utility (`write_to_slot()`) to format and write its output. Modules run independently and update their assigned slot.
 
-To build the project run
+## Make Commands
+
+To build and install the project:
+
 ```sh
-make       
+make
 sudo make install
 ```
 
-To uninstall the project run
+To uninstall and clean up:
+
 ```sh
-sudo make uninstall # Remove the installed binary
-make clean          # Remove compiled binary and build artifacts
+sudo make uninstall 
+make clean          
 ```
-
-## Configuration
-
-See `config.h`. Recompile whenever you make a change.
