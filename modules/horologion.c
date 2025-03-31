@@ -75,14 +75,9 @@ main(void)
                 int cnthr = until / 60;
                 int cntmn = until % 60; 
 
-                if (until == 1) {
-                        write_to_slot(MODULE_NAME,
-                                 "\033[31m%s in %02d:%02d\033[0m | %s %02d:%02d", 
-                                 name[index], cnthr, cntmn,
-                                 date, hour_now, mins_now);
-                }
                 write_to_slot(MODULE_NAME,
-                         "%s in %02d:%02d | %s %02d:%02d", 
+                         (until == 1 ? "\003[31m%s in %02d:%02d\033[0m | %s %02d:%02d" :
+                          "%s in %02d:%02d | %s %02d:%02d"),
                          name[index], cnthr, cntmn,
                          date, hour_now, mins_now);
 
@@ -152,7 +147,8 @@ double sun_event (double latitude, double longitude, double altitude,
         double zenith = get_zenith(altitude);
         double cosH = (cos(to_rad(zenith)) - (sin_dec * sin(to_rad(latitude))))
                 / (cos_dec * cos(to_rad(latitude))); // local hour angle
-        if (cosH > 1.0 || cosH < -1.0) return NAN; // sun never rises/sets
+        if (cosH > 1.0 || cosH < -1.0) 
+                log_err(MODULE_NAME, "sun never sets/rises");
         double H = want_sunrise ? 360.0 - to_deg(acos(cosH)) :
                                   to_deg(acos(cosH));
         H /= 15.0;

@@ -15,17 +15,17 @@
 #define MODULE_NAME "pomodoro"
 
 int is_number(const char*);
-void countdown(int);
-void do_pomodoro(int n, int wtime, int stime, int ltime, int freq);
+void countdown(float minutes);
+void do_pomodoro(int n, float wtime, float stime, float ltime, int freq);
 
 int
 main(int argc, char *argv[])
 {
         int ch;
         int n = 4;
-        int wtime = 25;
-        int stime = 5;
-        int ltime = 15;
+        float wtime = 25;
+        float stime = 5;
+        float ltime = 15;
         int freq = 3;
 
         /* 
@@ -80,13 +80,13 @@ is_number(const char *s)
 {
     if (!*s) return 0;
     for (; *s; ++s) {
-        if (*s < '0' || *s > '9') return 0;
+        if ((*s < '0' || *s > '9') && !(*s == '.')) return 0;
     }
     return 1;
 }
 
 void
-countdown(int minutes)
+countdown(float minutes)
 {
         int seconds = minutes * 60;
         while (seconds) {
@@ -98,7 +98,7 @@ countdown(int minutes)
 }
 
 void
-do_pomodoro(int n, int wtime, int stime, int ltime, int freq)
+do_pomodoro(int n, float wtime, float stime, float ltime, int freq)
 {
         for (int i = 0; i < n; ++i) {
                 countdown(wtime);
