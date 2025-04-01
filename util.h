@@ -1,7 +1,7 @@
-#ifndef IPCUTIL_H
-#define IPCUTIL_H
+#ifndef UTIL_H
+#define UTIL_H
 
 void log_err(const char *fmt, ...);
 void write_to_slot(const char *module_name, const char *fmt, ...);
 
-#endif // IPCUTIL_H
+#endif // UTIL_H
