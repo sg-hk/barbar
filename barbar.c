@@ -16,6 +16,7 @@
 #include "config.h"
 #include "util.h"
 
+/* sets status bar to error message and exits */
 void handle_signal(int);
 
 static bool terminate;
@@ -42,6 +43,7 @@ main(void)
         sigaction(SIGINT, &sa, NULL);
         sigaction(SIGTERM, &sa, NULL);
 
+        /* shared memory object and semaphor set up */
         size_t shm_size = NUM_MODULES * MSG_SIZE;
         int shm_fd = shm_open(SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0600);
         if (shm_fd == -1) 
@@ -87,6 +89,7 @@ main(void)
                 sem_post(sem);
 
                 if (out_str[0] != '\0') {
+                        /* update window root = dwm bar */
                         XStoreName(display, root, out_str);
                         XSync(display, False);
                 }
@@ -94,11 +97,7 @@ main(void)
                 usleep((useconds_t)(RFRSH * 1000000));
         }
 
-        /* 
-         * clean up 
-         * this is only triggered through signal termination
-         * the status bar is updated to reflect this
-         */
+        /* clean up triggered by signal */
         XStoreName(display, root, "barbar was terminated");
         XSync(display, False);
         free(out_str);
@@ -115,7 +114,6 @@ main(void)
         return 0;
 }
 
-/* sets status bar to error message and exits */
 void 
 handle_signal(int sig)
 {

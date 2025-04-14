@@ -76,6 +76,7 @@ main(void)
                 int cntmn = until % 60; 
 
                 write_to_slot(MODULE_NAME,
+                         /* red one minute before prayer; no colour otherwise  */
                          (until == 1 ? "\003[31m%s in %02d:%02d\033[0m | %s %02d:%02d" :
                           "%s in %02d:%02d | %s %02d:%02d"),
                          name[index], cnthr, cntmn,
@@ -90,7 +91,6 @@ main(void)
         return 0;
 }
 
-/* computational functions to get sun event (sunrise/sunset) */
 double to_rad (double deg) {return deg * (M_PI / 180.0);}
 double to_deg (double rad) {return rad * (180.0 / M_PI);}
 double norm_deg (double deg)
@@ -117,7 +117,6 @@ double get_zenith (double altitude)
         return OFFICIAL_ZENITH - dip;
 }
 
-/* algorithm: https://edwilliams.org/sunrise_sunset_algorithm.htm */
 double sun_event (double latitude, double longitude, double altitude, 
                   bool want_sunrise)
 {
@@ -126,6 +125,7 @@ double sun_event (double latitude, double longitude, double altitude,
         int local_offset = localtime(&now)->tm_gmtoff / 3600; // UTC+...
         double lng_hour = longitude / 15.0;
 
+        /* algorithm: https://edwilliams.org/sunrise_sunset_algorithm.html */
         /* get approximate time t */
         double t = want_sunrise ? N + ((6.0 - lng_hour) / 24.0) :
                                   N + ((18.0 - lng_hour) / 24.0);
