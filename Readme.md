@@ -1,5 +1,7 @@
 # Barbar
 
+[WIP!] trying to make it more WM-agnostic and simply print to stdout. the user should decide what to do with the output, not barbar. also the slot-writing logic is wrong and this is broken anyway.
+
 Barbar is a minimal X11 status updater. It reads fixed-size strings from shared memory, joins them with a separator, and sets the result as the root window name. By default, it uses `" | "` as the separator and updates every 0.5 seconds. These settings are defined in `config.h`.
 
 ## Modules
