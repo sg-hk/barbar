@@ -1,28 +1,23 @@
-/* ----------- */
-/* Main config */
-
-static const char *SHM_NAME = "shm_name";
-static const char *SEM_NAME = "sem_name";
-/* Names of the modules, in order from left to right on the status bar. */
-static const char *MODULE_NAMES[] = {
-    "pomodoro",
-    "horologion"
+/* left-to-right module order on the status bar */
+static const char *MODULES[] = { 
+	"pomodoro", 
+	"dailies", 
+	"time" 
 };
-static const int NUM_MODULES = sizeof(MODULE_NAMES) / sizeof(MODULE_NAMES[0]);
-/* Separator between messages */
-static const char *SEP = " | ";
 
-/* Maximum length of an individual string from a module */
-static const int MSG_SIZE = 64;
-/* Maximum total length of the string passed to xsetroot */
-static const int MAX_READ = 256;
-/* Refresh rate in seconds */
-static const float RFRSH = 0.5;
+#define  NUM_MODULES	sizeof(MODULES) / sizeof(MODULES[0])
 
+/* separator shown between module strings */
+#define SEP             " | "          
 
-/* ----------------- */
-/* Horologion config */
+/* limits */
+#define MSG_SIZE        64	       /* individual slot len */
+#define MAX_READ        256            /* total bar status len */
 
-static const double latitude = 0.0;
-static const double longitude = 0.0;
-static const double altitude = 0.0;
+/* bar update interval */
+#define RFRSH_SEC       0              /* seconds */
+#define RFRSH_NSEC      500000000      /* nanoseconds (0-999 999 999) */
+
+/* shared names */
+#define SHM_NAME        "/shm_barbar"
+#define SEM_NAME        "/sem_barbar"

@@ -33,7 +33,8 @@ write_to_slot(const char *module_name, const char *fmt, ...)
             log_err("%s: shm_open failed", module_name);
 
         size_t shm_size = NUM_MODULES * MSG_SIZE;
-        char *shm_ptr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+        char *shm_ptr = mmap(NULL, shm_size,
+			     PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
         if (shm_ptr == MAP_FAILED)
             log_err("%s: mmap failed", module_name);
 
@@ -43,7 +44,7 @@ write_to_slot(const char *module_name, const char *fmt, ...)
 
         int i;
         for (i = 0; i < NUM_MODULES; ++i) {
-            if (strcmp(MODULE_NAMES[i], module_name) == 0)
+            if (strcmp(MODULES[i], module_name) == 0)
                 break;
         }
         if (i == NUM_MODULES)
