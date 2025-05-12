@@ -25,7 +25,7 @@ main(void)
 {
 #ifdef __OPENBSD__
         if (pledge("stdio rpath wpath cpath fattr 
-	            id proc exec shm", NULL) == -1) {
+	            id proc exec shm unveil", NULL) == -1) {
                 perror("pledge");
                 exit(1);
         }
@@ -33,6 +33,7 @@ main(void)
 
 	struct timespec ts;
         size_t shm_size = NUM_MODULES * MSG_SIZE;
+        bool locked = false;
 
         int shm_fd = shm_open(SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0600);
         if (shm_fd == -1 && errno == EEXIST)
@@ -89,7 +90,6 @@ main(void)
 
         /* main loop */
         char out_str[MAX_READ];
-        bool locked = false;
 
         while (!terminate) {
                 if (xsem_wait(sem) == -1) {
