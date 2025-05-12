@@ -1,5 +1,5 @@
-#include <time.h>
 #include <signal.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "../util.h"

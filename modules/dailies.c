@@ -106,13 +106,32 @@ main(int argc, char *argv[])
 	char log_str[str_len + 1];
 	ssize_t nread = read(fd, log_str, str_len);
 	if (nread != str_len) {
-		if (nread != 0) {  /* read error */
+		if (nread < 0) {  /* read error */
 			w2s(mname, "error reading log");
 			close(fd);
 			return 1;
 		}
-		/* new log */
-		memset(log_str, 0, sizeof log_str);
+		/* new or incomplete log, initialize it */
+		lseek(fd, 0, SEEK_SET);
+		ftruncate(fd, 0);
+
+		snprintf(log_str, sizeof log_str, "%04d/%02d/%02d", y, m, d);
+		for (int i = 0; i < TARGET_COUNT; ++i)
+			strlcat(log_str, "|000", sizeof log_str);
+
+		if (write(fd, log_str, str_len) != str_len) {
+			w2s(mname, "error initializing log");
+			close(fd);
+			return 1;
+		}
+
+		/* move back to start for parsing the newly written log */
+		lseek(fd, 0, SEEK_SET);
+		if (read(fd, log_str, str_len) != str_len) {
+			w2s(mname, "error reading initialized log");
+			close(fd);
+			return 1;
+		}
 	}
 	log_str[str_len] = '\0';
 

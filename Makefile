@@ -2,6 +2,7 @@ CC      = cc
 CFLAGS  = -Wall -Wextra
 BIN_DIR = bin
 SRC_DIR = modules
+MANDIR    = $(HOME)/.local/share/man/man1
 
 SRCS    = $(wildcard $(SRC_DIR)/*.c)
 TARGETS = $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%, $(SRCS))
@@ -22,6 +23,9 @@ install: all
 	mkdir -p $(HOME)/.local/bin
 	cp $(BIN_DIR)/* $(HOME)/.local/bin/
 	@echo "installed all binaries to $(HOME)/.local/bin"
+	mkdir -p $(MANDIR)
+	cp barbar.1 $(MANDIR)/
+	@echo "installed man page to $(MANDIR)/barbar.1"
 
 clean:
 	rm -rf $(BIN_DIR)
@@ -30,3 +34,5 @@ clean:
 uninstall:
 	rm -f $(HOME)/.local/bin/bartime $(HOME)/.local/bin/dailies $(HOME)/.local/bin/pomodoro $(HOME)/.local/bin/barbar
 	@echo "uninstalled binaries from $(HOME)/.local/bin"
+	rm -f $(MANDIR)/barbar.1
+	@echo "removed man page from $(MANDIR)/barbar.1"

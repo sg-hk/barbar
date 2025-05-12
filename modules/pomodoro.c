@@ -1,4 +1,7 @@
+/* TODO signal handling: cleanup and write "done" */
+
 #include <math.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,6 +19,7 @@ typedef struct {
 static const char *mname = "pomodoro";
 
 void countdown(float minutes, char mode);
+void handle_signal(int sig);
 void run_pomodoro(Pomodoro *p);
 
 int
@@ -30,6 +34,14 @@ main(int argc, char *argv[])
         }
 	/* TODO add unveil */
 #endif
+
+	struct sigaction sa;
+	sa.sa_handler = handle_signal;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 
         /* defaults */
         Pomodoro pom = {
@@ -102,4 +114,10 @@ run_pomodoro(Pomodoro *p)
 	w2s(mname, "done");
 
 	return;
+}
+
+void handle_signal(int sig) {
+    (void)sig;  
+    w2s(mname, "user terminated");
+    exit(1);
 }

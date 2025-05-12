@@ -1,10 +1,12 @@
 	introduction  
+	------------
 barbar is a minimal status bar aggregator using shared memory for IPC
 it reads status updates from user modules and displays them as a combined string
 it is WM and OS agnostic, and simply prints out the string to stdout
 tested on Unix (OpenBSD, MacOS, and Linux)
 
 	usage  
+	-----
 start the aggregator:  
     barbar  
 run individual modules to update status:  
@@ -23,13 +25,15 @@ at a 4 cycle interval, and 2 minute short breaks otherwise
 
 the order, number, and names of modules can be set in config.h
 
-make commands  
+	make commands  
+	-------------
     make           build all modules
     make install   copy all binaries to $HOME/.local/bin
     make clean     remove built binaries
     make uninstall remove installed binaries from $HOME/.local/bin
 
-notes 
+	notes 
+	-----
     ensure barbar is running first to aggregate and display status updates
     look at config.h for barbar (aggregator) config, e.g. refresh rate
     look at modules/config_MODULE.h for module config, e.g. the date formatting

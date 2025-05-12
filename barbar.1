@@ -1,0 +1,113 @@
+.TH BARBAR 1 "May 12, 2025" "1.0" "General Commands Manual"
+
+NAME
+    barbar — minimal status bar aggregator using shared memory for IPC
+
+SYNOPSIS
+    barbar
+
+DESCRIPTION
+    barbar is a lightweight and WM-agnostic status bar aggregator. It reads 
+    status updates provided by external user modules via shared memory and 
+    continuously outputs a formatted string to stdout, suitable for piping 
+    into status bars or terminal interfaces.
+
+    barbar is designed to be fast, simple, and easily integrated with any 
+    environment. It does not depend on any window manager or desktop 
+    environment, and its behavior is entirely driven by user-provided 
+    configuration and external modules.
+
+OPERATION
+    Upon startup, barbar:
+      1. Initializes shared memory for inter-process communication.
+      2. Reads the configured list of modules to determine the expected 
+         shared memory keys and data formats.
+      3. Enters an infinite loop, periodically reading each module's 
+         current status message from shared memory.
+      4. Formats the combined status string using the configured separator 
+         and prints the result to stdout.
+      5. Sleeps for the configured refresh interval before repeating.
+
+    barbar performs no additional processing or sanitization on the 
+    received data. It merely aggregates and outputs the collected strings 
+    in the configured order.
+
+CONFIGURATION
+    barbar's behavior is configured at compile time through the 
+    config.h file. The following settings are available:
+
+      MODULES
+          An ordered array of module names. These names determine the 
+          left-to-right order of status items in the final output.
+
+      SEP
+          The separator string inserted between module outputs. Defaults 
+          to " | " but can be set to any string, including empty.
+
+      MSG_SIZE
+          The maximum allowed length of an individual module's status 
+          message.
+
+      MAX_READ
+          The maximum total length of the combined status string output 
+          by barbar.
+
+      RFRSH_SEC / RFRSH_NSEC
+          Controls the refresh rate for reading shared memory and 
+          updating the output. Values are specified in seconds and 
+          nanoseconds, allowing fine-grained control over update 
+          frequency.
+
+      SHM_NAME / SEM_NAME
+          The shared memory and semaphore names used for IPC. These 
+          should remain consistent across all communicating modules.
+
+USAGE
+    barbar is typically started at session initialization and kept running 
+    in the background, with its output piped into a status bar.
+
+    barbar prints to stdout and does not daemonize. It is the responsibility 
+    of the user to manage its lifecycle and integrate its output appropriately.
+
+EXIT STATUS
+    barbar returns 0 on normal termination and a non-zero value on failure 
+    to initialize shared memory, semaphores, or critical configuration errors.
+
+EXAMPLES
+    barbar alone simply aggregates module outputs:
+
+        $ barbar
+
+    barbar output can be piped into a status bar:
+
+        $ barbar | while read -r line; do xsetroot -name "$line"; done
+
+    Example MODULES configuration in config.h:
+
+        static const char *MODULES[] = { 
+            "pomodoro", 
+            "dailies", 
+            "time" 
+        };
+
+    This will display the outputs from the pomodoro, dailies, and time 
+    modules in left-to-right order, separated by SEP.
+
+    Example of how a module like 'dailies' might update its status:
+
+        $ dailies -t 30 -p 15
+
+    Example of a full pipeline using tmux:
+
+        $ barbar | while read -r line; do tmux set-option status-left "$line"; done
+
+NOTES
+    - barbar requires that all modules follow the shared memory protocol 
+      defined by SHM_NAME and SEM_NAME in config.h. the w2s function in
+      util.c ensures coherence: w2s(module_name, message_string)
+    - barbar should be started before any modules attempt to update their 
+      status.
+    - barbar requires recompilation on change. this keeps it fast and secure.
+
+AUTHORS
+    sg-hk, 2025
