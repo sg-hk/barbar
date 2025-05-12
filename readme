@@ -27,13 +27,17 @@ the order, number, and names of modules can be set in config.h
 
 	make commands  
 	-------------
-    make           build all modules
-    make install   copy all binaries to $HOME/.local/bin
-    make clean     remove built binaries
-    make uninstall remove installed binaries from $HOME/.local/bin
+build all binaries
+    make           
+copy to to $HOME/.local/bin
+    make install   
+remove barbar bin folder
+    make clean     
+remove installed binaries from $HOME/.local/bin
+    make uninstall
 
 	notes 
 	-----
-    ensure barbar is running first to aggregate and display status updates
-    look at config.h for barbar (aggregator) config, e.g. refresh rate
-    look at modules/config_MODULE.h for module config, e.g. the date formatting
+ensure barbar is running first to aggregate and display status updates
+look at config.h for barbar (aggregator) config, e.g. refresh rate
+look at modules/config_MODULE.h for module config, e.g. the date formatting
