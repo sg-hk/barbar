@@ -1,20 +1,32 @@
 CC      = cc
 CFLAGS  = -Wall -Wextra
-HELPERS = util.c config.c
-BIN_DIR = $(HOME)/.local/bin
-TARGETS = barbar bartime pomodoro dailies
+BIN_DIR = bin
+SRC_DIR = modules
 
-all: $(TARGETS)
+SRCS    = $(wildcard $(SRC_DIR)/*.c)
+TARGETS = $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%, $(SRCS))
+TARGETS += $(BIN_DIR)/barbar
 
-%: %.c $(HELPERS)
-	$(CC) $(CFLAGS) $(HELPERS) $< -o $@
+all: $(BIN_DIR) $(TARGETS)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+$(BIN_DIR)/barbar: barbar.c config.h util.c
+	$(CC) $(CFLAGS) barbar.c util.c -o $(BIN_DIR)/barbar
+
+$(BIN_DIR)/%: $(SRC_DIR)/%.c util.c
+	$(CC) $(CFLAGS) $< util.c -o $(BIN_DIR)/$*
 
 install: all
-	mkdir -p $(BIN_DIR)
-	for bin in $(TARGETS); do cp $$bin $(BIN_DIR)/; done
+	mkdir -p $(HOME)/.local/bin
+	cp $(BIN_DIR)/* $(HOME)/.local/bin/
+	@echo "installed all binaries to $(HOME)/.local/bin"
 
 clean:
-	rm -f $(TARGETS)
+	rm -rf $(BIN_DIR)
+	@echo "cleaned all built binaries"
 
 uninstall:
-	for bin in $(TARGETS); do rm -f $(BIN_DIR)/$$bin; done
+	rm -f $(HOME)/.local/bin/bartime $(HOME)/.local/bin/dailies $(HOME)/.local/bin/pomodoro $(HOME)/.local/bin/barbar
+	@echo "uninstalled binaries from $(HOME)/.local/bin"

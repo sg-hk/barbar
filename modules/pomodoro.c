@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "util.h"
+#include "../util.h"
 
 typedef struct {
         int   cycles;      /* number of work periods             */

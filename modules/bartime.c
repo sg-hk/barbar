@@ -1,11 +1,9 @@
-/* TODO: include signal handling for graceful exit */
-
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
 
-#include "util.h"
-#include "config.h"
+#include "../util.h"
+#include "config_bartime.h"
 
 static const char *mname = "bartime";
 static volatile sig_atomic_t terminate = 0;
