@@ -1,0 +1,39 @@
+introduction  
+barbar is a minimal status bar aggregator using shared memory for IPC
+it reads status updates from user modules and displays them as a combined string
+it is WM and OS agnostic, and simply prints out the string to stdout
+tested on Unix (OpenBSD, MacOS, and Linux)
+
+usage  
+    start the aggregator:  
+        barbar  
+
+    run individual modules to update status:  
+        bartime  
+        dailies  
+        pomodoro  
+
+    bartime date format can be changed in config.c
+
+    dailies can be used with flags to log study time:  
+        dailies -t 30 -p 15
+    this adds 30 minutes to theory and 15 minutes to practice
+
+    pomodoro can be used with flags to customise study time:
+        pomodoro -t 13 -l 3 -s 2 -f 4 -n 8 
+    this starts 8 pomodoros of 13 minutes with 3 minute long breaks 
+    at a 4 cycle interval, and 2 minute short breaks otherwise
+
+    the order, number, and names of modules can be set in config.c
+    the barbar settings (refresh rate, string separator) are in config.h
+
+
+make commands  
+    make           build all modules
+    make install   copy all binaries to $HOME/.local/bin
+    make clean     remove built binaries
+    make uninstall remove installed binaries from $HOME/.local/bin
+
+notes 
+    - ensure barbar is running first to aggregate and display status updates
+    - look at config.c (modules) and config.h (barbar) for customisation

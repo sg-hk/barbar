@@ -1,6 +1,6 @@
 #include "config.h"
 
-/* define exactly once */
+/* module names and number */
 const char *MODULES[] = { 
     "pomodoro", 
     "dailies", 
@@ -8,6 +8,7 @@ const char *MODULES[] = {
 };
 const int NUM_MODULES = sizeof(MODULES) / sizeof(MODULES[0]);
 
+/* dailies target domain-study time pairs */
 const Target TARGETS[] = {
     { "theory",    120  },
     { "practice",  120  },
@@ -15,7 +16,10 @@ const Target TARGETS[] = {
 };
 const int TARGET_COUNT = sizeof(TARGETS) / sizeof(TARGETS[0]);
 
+/* dailies day start hour */
 const int FIRSTHOUR = 6;
-const char *LOGPATH = "/.local/share/dailies/log";
 
+/* bartime date formatting */
 const char *date_format = "%a %d %b %H:%M";
+
+/* the pomodoro defaults (t:25,l:15,s:5,n:4,f:4) are in pomodoro.c */
