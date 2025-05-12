@@ -14,7 +14,7 @@ typedef struct {
         int   freq;        /* take long break every N cycles     */
 } Pomodoro;
 
-static const char *module_name = "pomodoro";
+static const char *mname = "pomodoro";
 
 void countdown(float minutes, char mode);
 void run_pomodoro(Pomodoro *p);
@@ -22,11 +22,14 @@ void run_pomodoro(Pomodoro *p);
 int
 main(int argc, char *argv[])
 {
+
 #ifdef ___OPENBSD___
+	/* TODO update pledge to what's necessary */
         if (pledge("stdio proc unix", "") == -1) {
                 perror("pledge");
                 return 1;
         }
+	/* TODO add unveil */
 #endif
 
         /* defaults */
@@ -54,7 +57,7 @@ main(int argc, char *argv[])
                         case 's': pom.short_min  = strtof(optarg,0);  break;
                         case 'l': pom.long_min   = strtof(optarg,0);  break;
                         case 'f': pom.freq       = atoi(optarg);      break;
-                        default : fprintf(stderr, "bad args\n");      return 1;
+                        default : w2s(mname, "bad args"); return 1;
                         }
                 }
                 if (optind != argc)     
@@ -72,8 +75,7 @@ countdown(float minutes, char mode)
 {
         int sec = (int)lroundf(minutes * 60.0f);
         while (sec) {
-                write_to_slot(module_name, "\r[%c] %02d:%02d", 
-			      mode, sec / 60, sec % 60);
+                w2s(mname, "[%c] %02d:%02d", mode, sec / 60, sec % 60);
                 sleep(1);
                 --sec;
         }
@@ -98,7 +100,7 @@ run_pomodoro(Pomodoro *p)
                         countdown(p->short_min, mode);
                 }
 	}
-	write_to_slot(module_name, "\rdone");
+	w2s(mname, "done");
 
 	return;
 }

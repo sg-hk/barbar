@@ -38,25 +38,25 @@ main(void)
         if (shm_fd == -1 && errno == EEXIST)
                 shm_fd = shm_open(SHM_NAME, O_RDWR, 0);
         if (shm_fd == -1) {
-                fprintf(stderr, "error: shm_open\n");
+                fprintf(stderr, "shm_open\n");
 		return 0;
         }
 
         if (ftruncate(shm_fd, shm_size) == -1) {
-                fprintf(stderr, "error: ftruncate\n");
+                fprintf(stderr, "ftruncate\n");
                 goto cleanup_shm_fd;
         }
 
         char *shm_ptr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE,
                              MAP_SHARED, shm_fd, 0);
         if (shm_ptr == MAP_FAILED) {
-                fprintf(stderr, "error: mmap\n");
+                fprintf(stderr, "mmap\n");
                 goto cleanup_shm_fd;
         }
 
         sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0600, 1);
         if (sem == SEM_FAILED) {
-                fprintf(stderr, "error: sem_open\n");
+                fprintf(stderr, "sem_open\n");
                 goto cleanup_mmap;
         }
 
@@ -72,7 +72,7 @@ main(void)
 
         /* zero shared memory on first start */
         if (xsem_wait(sem) == -1) {
-                fprintf(stderr, "error: sem_wait\n");
+                fprintf(stderr, "sem_wait\n");
                 goto cleanup_sem;
         }
         memset(shm_ptr, 0, shm_size);
@@ -93,7 +93,7 @@ main(void)
 
         while (!terminate) {
                 if (xsem_wait(sem) == -1) {
-                        fprintf(stderr, "error: sem_wait\n");
+                        fprintf(stderr, "sem_wait\n");
                         break;
                 }
                 locked = true;
@@ -114,7 +114,7 @@ main(void)
                         if (cur_len + (int)need >= MAX_READ) {
                                 xsem_post(sem);
                                 locked = false;
-                                fprintf(stderr, "barbar: string too long\n");
+                                fprintf(stderr, "string too long\n");
                                 goto sleep_only; 
                         }
 
@@ -129,7 +129,7 @@ main(void)
                 xsem_post(sem);
                 locked = false;
 
-		/* EVERYTHING BUILDS UP TO THIS MOMENT !*/
+		/* EVERYTHING BUILDS UP TO THIS MOMENT ! */
                 if (out_str[0] != '\0')
                         printf("%s\n", out_str);
 
@@ -146,18 +146,18 @@ sleep_only:
 cleanup_sem:
         if (locked) xsem_post(sem);
         if (sem_close(sem) == -1)
-                fprintf(stderr, "error: sem_close\n");
+                fprintf(stderr, "sem_close\n");
         if (sem_unlink(SEM_NAME) == -1)
-                fprintf(stderr, "error: sem_unlink\n");
+                fprintf(stderr, "sem_unlink\n");
 
 cleanup_mmap:
         if (munmap(shm_ptr, shm_size) == -1)
-                fprintf(stderr, "error: munmap\n");
+                fprintf(stderr, "munmap\n");
 
 cleanup_shm_fd:
         close(shm_fd);
         if (shm_unlink(SHM_NAME) == -1)
-                fprintf(stderr, "error: shm_unlink\n");
+                fprintf(stderr, "shm_unlink\n");
 
         return 0;
 }

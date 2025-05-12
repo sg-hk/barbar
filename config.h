@@ -1,23 +1,31 @@
-/* left-to-right module order on the status bar */
-static const char *MODULES[] = { 
-	"pomodoro", 
-	"dailies", 
-	"time" 
-};
+#ifndef CONFIG_H
+#define CONFIG_H
 
-#define  NUM_MODULES	sizeof(MODULES) / sizeof(MODULES[0])
+/* declarations only: no definitions */
+extern const char *MODULES[];
+extern const int NUM_MODULES;
 
-/* separator shown between module strings */
 #define SEP             " | "          
+#define MSG_SIZE        64
+#define MAX_READ        256
+#define RFRSH_SEC       0
+#define RFRSH_NSEC      500000000
 
-/* limits */
-#define MSG_SIZE        64	       /* individual slot len */
-#define MAX_READ        256            /* total bar status len */
-
-/* bar update interval */
-#define RFRSH_SEC       0              /* seconds */
-#define RFRSH_NSEC      500000000      /* nanoseconds (0-999 999 999) */
-
-/* shared names */
 #define SHM_NAME        "/shm_barbar"
 #define SEM_NAME        "/sem_barbar"
+
+/* Dailies declarations */
+typedef struct Target {
+    const char *domain;
+    const int time;
+} Target;
+
+extern const Target TARGETS[];
+extern const int TARGET_COUNT;
+extern const int FIRSTHOUR;
+extern const char *LOGPATH;
+
+/* Bartime */
+extern const char *date_format;
+
+#endif

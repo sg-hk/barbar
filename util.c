@@ -5,7 +5,6 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #include <syslog.h>
 
 #include "config.h"
@@ -22,7 +21,7 @@ log_err(const char *fmt, ...)
 }
 
 void
-write_to_slot(const char *module_name, const char *fmt, ...)
+w2s(const char *module_name, const char *fmt, ...)
 {
     static char *slot = NULL;
     static sem_t *sem = NULL;
