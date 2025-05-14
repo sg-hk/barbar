@@ -18,7 +18,7 @@ static int xsem_wait(sem_t *s);
 static int xsem_post(sem_t *s);
 static void handle_signal(int sig);
 
-static volatile sig_atomic_t terminate = 0;
+static volatile sig_atomic_t terminate;
 
 int
 main(void)
@@ -34,6 +34,7 @@ main(void)
 	struct timespec ts;
         size_t shm_size = NUM_MODULES * MSG_SIZE;
         bool locked = false;
+	terminate = 0;
 
         int shm_fd = shm_open(SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0600);
         if (shm_fd == -1 && errno == EEXIST)

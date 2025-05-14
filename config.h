@@ -1,9 +1,11 @@
 static const char *MODULES[] = { 
     "pomodoro", 
+    "ccq",
     "dailies", 
     "bartime" 
 };
 static const int NUM_MODULES = sizeof(MODULES) / sizeof(MODULES[0]);
+
 #define SEP             " | "          
 #define MSG_SIZE        64
 #define MAX_READ        256
