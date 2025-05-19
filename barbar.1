@@ -1,0 +1,120 @@
+.TH BARBAR 1 "May 12, 2025" "1.0" "General Commands Manual"
+
+.SH NAME
+barbar \- minimal status bar aggregator using shared memory for IPC
+
+.SH SYNOPSIS
+.B barbar
+
+.SH DESCRIPTION
+barbar is a lightweight, window‑manager‑agnostic status bar aggregator.  
+It reads status updates from external user modules via shared memory and  
+periodically outputs a formatted string to standard output, suitable for  
+piping into status bars, terminal multiplexers, or other wrappers.
+
+.SH OPERATION
+Upon startup, barbar:
+.RS
+.IP 1. 4
+Initializes the shared memory segment and semaphore for inter‑process communication.
+.IP 2. 4
+Reads the compile‑time configuration (config.h) to determine module names and order.
+.IP 3. 4
+Enters an infinite loop in which it:
+.RS
+.IP a. 4
+Fetches each module’s current status from shared memory.
+.IP b. 4
+Concatenates the status strings in the configured order, inserting the separator.
+.IP c. 4
+Writes the combined string to stdout.
+.IP d. 4
+Sleeps for the configured refresh interval.
+.RE
+.RE
+
+.SH CONFIGURATION
+barbar’s behavior is driven entirely by compile‑time settings in config.h:
+.RS
+.IP MODULES
+An ordered array of module names. Determines left‑to‑right output order.
+.IP SEP
+Separator string inserted between module outputs (default: “ | ”).
+.IP MSG_SIZE
+Maximum length of an individual module’s status string.
+.IP MAX_READ
+Maximum length of the combined output string.
+.IP RFRSH_SEC and RFRSH_NSEC
+Refresh interval in seconds and nanoseconds.
+.IP SHM_NAME and SEM_NAME
+System V or POSIX names for the shared memory segment and semaphore.
+.RE
+
+.SH USAGE
+barbar does not daemonize. Run it at session startup and manage its lifecycle  
+externally. Typical invocation:
+.PP
+.RS
+.B barbar \| while read -r line; do xsetroot -name "\$line"; done
+.RE
+
+.SH EXIT STATUS
+.TP
+.B 0
+Normal termination.
+.TP
+.B >0
+Failure to initialize shared memory, semaphores, or critical configuration errors.
+
+.SH EXAMPLES
+.PP
+Aggregate module outputs to root window name on X11:
+.RS
+.EX
+$ barbar | while read -r line; do xsetroot -name "$line"; done
+.EE
+.RE
+
+.PP
+Use with tmux status-left:
+.RS
+.EX
+$ barbar | while read -r line; do tmux set-option status-left "$line"; done
+.EE
+.RE
+
+.PP
+Compile‑time MODULES example (config.h):
+.RS
+.EX
+static const char *MODULES[] = {
+    "pomodoro",
+    "dailies",
+    "time"
+};
+.EE
+.RE
+
+.PP
+Sample dailies module update (logged separately):
+.RS
+.EX
+$ dailies -t 30 -p 15
+.EE
+.RE
+
+.SH NOTES
+.RS
+.IP \[bu]
+barbar requires modules to follow the shared memory protocol defined in config.h.
+.IP \[bu]
+Modules manage their own shared memory writes; barbar only reads.
+.IP \[bu]
+Configuration changes require recompilation to take effect.
+.RE
+
+.SH AUTHORS
+Written by sg-hk, 2025.
+
+.SH SEE ALSO
+shm_open(3), sem_open(3), xsetroot(1), tmux(1)
