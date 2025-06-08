@@ -55,8 +55,8 @@ open_shm:
 			goto open_shm;
 		} else if (shm_fd == -1)
 			log_err("can neither create new shm nor access old");
-	} else
-		printf("couldn't create a new shm");
+	} else 
+		log_err("couldn't create a new shm");
 
 	/* only resize shared memory on first run */
 	if (is_creator && (ftruncate(shm_fd, shm_size) == -1))
@@ -109,21 +109,18 @@ open_shm:
 		out_str[0] = '\0';
 
 		/* lock the mutex */
-		printf("WILL LOCK\n");
 		pthread_mutex_lock(&shm_data->mutex);
 
 		/* start the conditional wait within predicate loop:
 		 * 	wait as long as not terminate +
 		 * 	versions match
 		 */
-		printf("LOCKED. WILL SLEEP\n");
 		while (!terminate && shm_data->version == local_version) {
 			/* unlock mutex, put thread to sleep, and
 			 * upon wake up lock (for this process) */
 			pthread_cond_wait(&shm_data->cond, 
 				   &shm_data->mutex);
 		}
-		printf("WOKEN UP\n");
 
 		/* thread wakes up! */
 		/* check for signal first */
